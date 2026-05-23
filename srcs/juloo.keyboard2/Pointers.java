@@ -74,6 +74,14 @@ public final class Pointers implements Handler.Callback
     return false;
   }
 
+  public KeyValue getKeyValueFor(KeyboardData.Key k)
+  {
+    for (Pointer p : _ptrs)
+      if (p.key == k)
+        return p.value;
+    return null;
+  }
+
   /** See [FLAG_P_*] flags. Returns [-1] if the key is not pressed. */
   public int getKeyFlags(KeyValue kv)
   {

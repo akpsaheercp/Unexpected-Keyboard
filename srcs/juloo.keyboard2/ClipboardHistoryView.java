@@ -43,6 +43,22 @@ public final class ClipboardHistoryView extends NonScrollListView
     _service.remove_history_entry(clip);
   }
 
+  public void edit_entry(final int pos)
+  {
+    final String clip = _history.get(pos);
+    CustomLayoutEditDialog.show(getContext(), clip, false, new CustomLayoutEditDialog.Callback() {
+        @Override
+        public void select(String text) {
+            if (text != null && !text.equals(clip)) {
+                _service.remove_history_entry(clip);
+                _service.add_clip(text);
+            }
+        }
+        @Override
+        public String validate(String text) { return null; }
+    });
+  }
+
   /** Send the specified entry to the editor. */
   public void paste_entry(int pos)
   {
@@ -92,6 +108,12 @@ public final class ClipboardHistoryView extends NonScrollListView
           {
             @Override
             public void onClick(View v) { pin_entry(pos); }
+          });
+      v.findViewById(R.id.clipboard_entry_edit).setOnClickListener(
+          new View.OnClickListener()
+          {
+            @Override
+            public void onClick(View v) { edit_entry(pos); }
           });
       v.findViewById(R.id.clipboard_entry_paste).setOnClickListener(
           new View.OnClickListener()

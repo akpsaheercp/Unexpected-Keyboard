@@ -10,8 +10,10 @@ import android.util.AttributeSet;
 public class Theme
 {
   // Key colors
+  public final int colorKeyboard;
   public final int colorKey;
   public final int colorKeyActivated;
+  public final int colorAccentKey;
 
   // Label colors
   public final int lockedColor;
@@ -33,16 +35,20 @@ public class Theme
 
   public final int colorNavBar;
   public final boolean isLightNavBar;
+  public final boolean isElevated;
 
   public Theme(Context context, AttributeSet attrs)
   {
     getKeyFont(context); // _key_font will be accessed
     TypedArray s = context.getTheme().obtainStyledAttributes(attrs, R.styleable.keyboard, 0, 0);
+    colorKeyboard = s.getColor(R.styleable.keyboard_colorKeyboard, 0);
     colorKey = s.getColor(R.styleable.keyboard_colorKey, 0);
     colorKeyActivated = s.getColor(R.styleable.keyboard_colorKeyActivated, 0);
+    colorAccentKey = s.getColor(R.styleable.keyboard_colorAccentKey, colorKey);
     // colorKeyboard = s.getColor(R.styleable.keyboard_colorKeyboard, 0);
     colorNavBar = s.getColor(R.styleable.keyboard_navigationBarColor, 0);
     isLightNavBar = s.getBoolean(R.styleable.keyboard_windowLightNavigationBar, false);
+    isElevated = s.getBoolean(R.styleable.keyboard_isElevated, false);
     labelColor = s.getColor(R.styleable.keyboard_colorLabel, 0);
     activatedColor = s.getColor(R.styleable.keyboard_colorLabelActivated, 0);
     pressedColor = s.getColor(R.styleable.keyboard_colorLabelPressed, labelColor);
@@ -92,6 +98,7 @@ public class Theme
 
   public static final class Computed
   {
+    private final Config _config;
     public final float vertical_margin;
     public final float horizontal_margin;
     public final float margin_top;
@@ -104,10 +111,23 @@ public class Theme
 
     public Computed(Theme theme, Config config, float keyWidth, KeyboardData layout)
     {
+      this(theme, config, keyWidth, layout, -1f);
+    }
+
+    public Computed(Theme theme, Config config, float keyWidth, KeyboardData layout, float customRowHeight)
+    {
+      _config = config;
       // Make sure that the layout isn't higher than the screen. Take the
       // height of the candidates view into account.
-      row_height = Math.min(config.keyboard_rows_height_pixels,
-          (config.screenHeightPixels - config.keyboard_rows_height_pixels) / layout.keysHeight);
+      if (customRowHeight > 0)
+      {
+        row_height = customRowHeight;
+      }
+      else
+      {
+        row_height = Math.min(config.keyboard_rows_height_pixels,
+            (config.screenHeightPixels - config.keyboard_rows_height_pixels) / layout.keysHeight);
+      }
       vertical_margin = config.key_vertical_margin * row_height;
       horizontal_margin = config.key_horizontal_margin * keyWidth;
       // Add half of the key margin on the left and on the top as it's also
@@ -118,10 +138,20 @@ public class Theme
       key_activated = new Key(theme, config, keyWidth, true);
       indication_paint = init_label_paint(config, null);
       indication_paint.setColor(theme.subLabelColor);
+      refresh_alpha();
+    }
+
+    public void refresh_alpha()
+    {
+      key.refresh_alpha();
+      key_activated.refresh_alpha();
+      indication_paint.setAlpha(_config.keyOpacity);
     }
 
     public static final class Key
     {
+      private final Config _config;
+      private final boolean _activated;
       public final Paint bg_paint = new Paint();
       public final Paint border_left_paint;
       public final Paint border_top_paint;
@@ -137,6 +167,8 @@ public class Theme
 
       public Key(Theme theme, Config config, float keyWidth, boolean activated)
       {
+        _config = config;
+        _activated = activated;
         bg_paint.setColor(activated ? theme.colorKeyActivated : theme.colorKey);
         if (config.borderConfig)
         {
@@ -148,22 +180,33 @@ public class Theme
           border_radius = theme.keyBorderRadius;
           border_width = activated ? theme.keyBorderWidthActivated : theme.keyBorderWidth;
         }
-        bg_paint.setAlpha(activated ? config.keyActivatedOpacity : config.keyOpacity);
-        border_left_paint = init_border_paint(config, border_width, theme.keyBorderColorLeft);
-        border_top_paint = init_border_paint(config, border_width, theme.keyBorderColorTop);
-        border_right_paint = init_border_paint(config, border_width, theme.keyBorderColorRight);
-        border_bottom_paint = init_border_paint(config, border_width, theme.keyBorderColorBottom);
+        border_left_paint = init_border_paint(border_width, theme.keyBorderColorLeft, 255);
+        border_top_paint = init_border_paint(border_width, theme.keyBorderColorTop, 255);
+        border_right_paint = init_border_paint(border_width, theme.keyBorderColorRight, 255);
+        border_bottom_paint = init_border_paint(border_width, theme.keyBorderColorBottom, 255);
         _label_paint = init_label_paint(config, null);
         _special_label_paint = init_label_paint(config, _key_font);
         _sublabel_paint = init_label_paint(config, null);
         _special_sublabel_paint = init_label_paint(config, _key_font);
         _label_alpha_bits = (config.labelBrightness & 0xFF) << 24;
+        refresh_alpha();
+      }
+
+      public void refresh_alpha()
+      {
+        int alpha = _activated ? _config.keyActivatedOpacity : _config.keyOpacity;
+        bg_paint.setAlpha(alpha);
+        border_left_paint.setAlpha(alpha);
+        border_top_paint.setAlpha(alpha);
+        border_right_paint.setAlpha(alpha);
+        border_bottom_paint.setAlpha(alpha);
       }
 
       public Paint label_paint(boolean special_font, int color, float text_size)
       {
         Paint p = special_font ? _special_label_paint : _label_paint;
-        p.setColor((color & 0x00FFFFFF) | _label_alpha_bits);
+        int alpha_bits = (_config.labelBrightness & 0xFF) << 24;
+        p.setColor((color & 0x00FFFFFF) | alpha_bits);
         p.setTextSize(text_size);
         return p;
       }
@@ -171,20 +214,21 @@ public class Theme
       public Paint sublabel_paint(boolean special_font, int color, float text_size, Paint.Align align)
       {
         Paint p = special_font ? _special_sublabel_paint : _sublabel_paint;
-        p.setColor((color & 0x00FFFFFF) | _label_alpha_bits);
+        int alpha_bits = (_config.labelBrightness & 0xFF) << 24;
+        p.setColor((color & 0x00FFFFFF) | alpha_bits);
         p.setTextSize(text_size);
         p.setTextAlign(align);
         return p;
       }
     }
 
-    static Paint init_border_paint(Config config, float border_width, int color)
+    static Paint init_border_paint(float border_width, int color, int alpha)
     {
       Paint p = new Paint();
-      p.setAlpha(config.keyOpacity);
       p.setStyle(Paint.Style.STROKE);
       p.setStrokeWidth(border_width);
       p.setColor(color);
+      p.setAlpha(alpha);
       return p;
     }
 

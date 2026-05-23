@@ -67,6 +67,7 @@ LOCALES = [
   loc("lt_LT", "latin", "latn_qwerty_lt", extra_keys="accent_ogonek:ą:ę:į:ų@s|accent_caron:č:š:ž@f|accent_dot_above:ė@s|accent_macron:ū@o|€"),
   loc("lv_LV", "latin", "latn_qwerty_lv", extra_keys="accent_macron:ā:ē:ī:ū@o|accent_caron:č:š:ž@f|accent_ogonek:ķ:ļ:ņ@s|accent_cedille:ģ@c|€"),
   loc("mk", "cyrillic", "cyrl_lynyertdz_mk", extra_keys="ѕ|ѓ|ќ|ѝ|ѐ|љ|њ|џ|„|“|€"),
+  loc("ml_IN", "malayalam", "mlym_malayalam", extra_keys="₹"),
   loc("mn_MN", "cyrillic", "cyrl_fcuzhen_mn", extra_keys="ү|ө"),
   loc("mr_IN", "devanagari", "deva_inscript", extra_keys="₹"),
   loc("mt_MT", "latin", "latn_qwerty_mt", extra_keys="accent_grave:à:è:ì:ò:ù|accent_dot_above:ċ:ż:ġ|ħ"),

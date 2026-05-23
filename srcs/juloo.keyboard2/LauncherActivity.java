@@ -98,11 +98,6 @@ public class LauncherActivity extends Activity implements Handler.Callback
     imm.showInputMethodPicker();
   }
 
-  public void launch_dictionaries_activity(View v)
-  {
-    startActivity(new Intent(this, DictionariesActivity.class));
-  }
-
   Animatable find_anim(int id)
   {
     ImageView img = (ImageView)findViewById(id);

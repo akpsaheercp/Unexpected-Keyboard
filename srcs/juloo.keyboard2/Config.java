@@ -3,6 +3,7 @@ package juloo.keyboard2;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ public final class Config
   private final SharedPreferences _prefs;
 
   // From resources
-  public final float marginTop;
+  public float marginTop;
   public final float keyPadding;
 
   public final float labelTextSize;
@@ -75,6 +76,13 @@ public final class Config
   public boolean clipboard_history_enabled;
   public int clipboard_history_duration;
   public boolean space_bar_auto_complete;
+  public boolean floating_enabled;
+  public boolean split_enabled;
+  public boolean collapsed_enabled;
+  public int floating_x;
+  public int floating_y;
+  public int floating_width;
+  public int floating_height;
 
   // Dynamically set
   /** Configuration options implied by the connected editor. */
@@ -194,6 +202,13 @@ public final class Config
     clipboard_history_enabled = _prefs.getBoolean("clipboard_history_enabled", false);
     clipboard_history_duration = Integer.parseInt(_prefs.getString("clipboard_history_duration", "5"));
     space_bar_auto_complete = _prefs.getBoolean("space_bar_auto_complete", false);
+    floating_enabled = _prefs.getBoolean("floating_enabled", false);
+    split_enabled = _prefs.getBoolean("split_enabled", false);
+    collapsed_enabled = _prefs.getBoolean("collapsed_enabled", false);
+    floating_x = _prefs.getInt("floating_x", 0);
+    floating_y = _prefs.getInt("floating_y", 0);
+    floating_width = _prefs.getInt("floating_width", 0);
+    floating_height = _prefs.getInt("floating_height", 0);
 
     float screen_width_dp = dm.widthPixels / dm.density;
     wide_screen = screen_width_dp >= WIDE_DEVICE_THRESHOLD;
@@ -222,6 +237,77 @@ public final class Config
   {
     clipboard_history_enabled = e;
     _prefs.edit().putBoolean("clipboard_history_enabled", e).apply();
+  }
+
+  public void set_floating_enabled(boolean e)
+  {
+    floating_enabled = e;
+    _prefs.edit().putBoolean("floating_enabled", e).apply();
+  }
+
+  public void set_split_enabled(boolean e)
+  {
+    split_enabled = e;
+    _prefs.edit().putBoolean("split_enabled", e).apply();
+  }
+
+  public void set_collapsed_enabled(boolean e)
+  {
+    collapsed_enabled = e;
+    _prefs.edit().putBoolean("collapsed_enabled", e).apply();
+  }
+
+  public void set_floating_position(int x, int y)
+  {
+    floating_x = x;
+    floating_y = y;
+    _prefs.edit().putInt("floating_x", x).putInt("floating_y", y).apply();
+  }
+
+  public void set_floating_width(int w)
+  {
+    floating_width = w;
+    _prefs.edit().putInt("floating_width", w).apply();
+  }
+
+  public void set_floating_height(int h)
+  {
+    floating_height = h;
+    _prefs.edit().putInt("floating_height", h).apply();
+  }
+
+  public void save_floating_rect(int x, int y, int w, int h)
+  {
+      floating_x = x;
+      floating_y = y;
+      floating_width = w;
+      floating_height = h;
+      _prefs.edit()
+          .putInt("floating_x", x)
+          .putInt("floating_y", y)
+          .putInt("floating_width", w)
+          .putInt("floating_height", h)
+          .commit();
+  }
+
+  public void set_keyboard_brightness(int percent)
+  {
+    keyboardOpacity = percent * 255 / 100;
+    keyOpacity = percent * 255 / 100;
+    keyActivatedOpacity = percent * 255 / 100;
+    labelBrightness = percent * 255 / 100;
+
+    _prefs.edit()
+        .putInt("keyboard_opacity", percent)
+        .putInt("key_opacity", percent)
+        .putInt("key_activated_opacity", percent)
+        .putInt("label_brightness", percent)
+        .commit();
+  }
+
+  public int get_keyboard_brightness_percent()
+  {
+    return _prefs.getInt("keyboard_opacity", 100);
   }
 
   private float get_dip_pref(DisplayMetrics dm, String pref_name, float def)
@@ -261,6 +347,8 @@ public final class Config
       case "epaper": return R.style.ePaper;
       case "desert": return R.style.Desert;
       case "jungle": return R.style.Jungle;
+      case "gboardlight": return R.style.GboardLight;
+      case "gboarddark": return R.style.GboardDark;
       case "monetlight": return R.style.MonetLight;
       case "monetdark": return R.style.MonetDark;
       case "monet":
@@ -274,6 +362,12 @@ public final class Config
       case "epaperblack": return R.style.ePaperBlack;
       default:
       case "system":
+        if (Build.VERSION.SDK_INT >= 31)
+        {
+          if ((night_mode & Configuration.UI_MODE_NIGHT_NO) != 0)
+            return R.style.MonetLight;
+          return R.style.MonetDark;
+        }
         if ((night_mode & Configuration.UI_MODE_NIGHT_NO) != 0)
           return R.style.Light;
         return R.style.Dark;

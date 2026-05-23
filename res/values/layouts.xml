@@ -7,6 +7,7 @@
     <item>latn_colemak</item>
     <item>latn_dvorak</item>
     <item>arab_alt</item>
+    <item>arab_gboard</item>
     <item>arab_hamvaj_tly</item>
     <item>arab_pc</item>
     <item>arab_pc_ckb</item>
@@ -89,6 +90,7 @@
     <item>latn_qwertz_sq</item>
     <item>latn_qzerty_it</item>
     <item>latn_workman_us</item>
+    <item>mlym_malayalam</item>
     <item>shaw_imperial_en</item>
     <item>sinhala_phonetic</item>
     <item>tamil_default</item>
@@ -101,6 +103,7 @@
     <item>Colemak</item>
     <item>Dvorak</item>
     <item>Arabic Alt</item>
+    <item>Arabic (Gboard)</item>
     <item>Talysh (تالشی همواج)</item>
     <item>Arabic PC</item>
     <item>Kurdish (کوردی) QWERTY</item>
@@ -183,6 +186,7 @@
     <item>QWERTZ (Albanian)</item>
     <item>QZERTY (Italiano)</item>
     <item>WORKMAN (US)</item>
+    <item>മലയാളം</item>
     <item>Shaw Imperial</item>
     <item>සිංහල</item>
     <item>தமிழ்</item>
@@ -195,6 +199,7 @@
     <item>@xml/latn_colemak</item>
     <item>@xml/latn_dvorak</item>
     <item>@xml/arab_alt</item>
+    <item>@xml/arab_gboard</item>
     <item>@xml/arab_hamvaj_tly</item>
     <item>@xml/arab_pc</item>
     <item>@xml/arab_pc_ckb</item>
@@ -277,6 +282,7 @@
     <item>@xml/latn_qwertz_sq</item>
     <item>@xml/latn_qzerty_it</item>
     <item>@xml/latn_workman_us</item>
+    <item>@xml/mlym_malayalam</item>
     <item>@xml/shaw_imperial_en</item>
     <item>@xml/sinhala_phonetic</item>
     <item>@xml/tamil_default</item>

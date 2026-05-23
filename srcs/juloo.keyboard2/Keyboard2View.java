@@ -8,15 +8,20 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.inputmethodservice.InputMethodService;
-import android.os.Build.VERSION;
+import android.os.Build;
+import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.util.TypedValue;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
+
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.view.WindowMetrics;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -89,12 +94,12 @@ public class Keyboard2View extends View
 
   public void refresh_navigation_bar(Context context)
   {
-    if (VERSION.SDK_INT < 21)
+    if (Build.VERSION.SDK_INT < 21)
       return;
     // The intermediate Window is a [Dialog].
     Window w = getParentWindow(context);
     w.setNavigationBarColor(_theme.colorNavBar);
-    if (VERSION.SDK_INT < 26)
+    if (Build.VERSION.SDK_INT < 26)
       return;
     int uiFlags = getSystemUiVisibility();
     if (_theme.isLightNavBar)
@@ -118,6 +123,13 @@ public class Keyboard2View extends View
     _mods = Pointers.Modifiers.EMPTY;
     _pointers.clear();
     requestLayout();
+    invalidate();
+  }
+
+  public void refresh_alpha()
+  {
+    if (_tc != null)
+      _tc.refresh_alpha();
     invalidate();
   }
 
@@ -240,18 +252,32 @@ public class Keyboard2View extends View
   private KeyboardData.Key getKeyAtPosition(float tx, float ty)
   {
     KeyboardData.Row row = getRowAtPosition(ty);
-    float x = _marginLeft;
-    if (row == null || tx < x)
-      return null;
+    if (row == null) return null;
+    
+    float xBase = _marginLeft + _tc.margin_left;
+    float keysWidth = _keyboard.keysWidth;
+    float effectiveWidth = getWidth() - _marginLeft - _marginRight;
+    float middleGap = _config.split_enabled ? (effectiveWidth * 0.3f) : 0;
+
+    if (tx < xBase) return null;
+
+    float currentX = 0;
     for (KeyboardData.Key key : row.keys)
     {
-      float xLeft = x + key.shift * _keyWidth;
+      currentX += key.shift;
+      float xOffset = xBase + currentX * _keyWidth;
+      if (_config.split_enabled && currentX >= keysWidth / 2)
+      {
+          xOffset += middleGap;
+      }
+      
+      float xLeft = xOffset;
       float xRight = xLeft + key.width * _keyWidth;
-      if (tx < xLeft)
-        return null;
-      if (tx < xRight)
+      
+      if (tx >= xLeft && tx < xRight)
         return key;
-      x = xRight;
+        
+      currentX += key.width;
     }
     return null;
   }
@@ -264,13 +290,39 @@ public class Keyboard2View extends View
   @Override
   public void onMeasure(int wSpec, int hSpec)
   {
-    DisplayMetrics dm = getContext().getResources().getDisplayMetrics();
-    int width = dm.widthPixels;
+    int width = MeasureSpec.getSize(wSpec);
+    int hSize = MeasureSpec.getSize(hSpec);
+    int hMode = MeasureSpec.getMode(hSpec);
+
+    if (width == 0)
+    {
+      DisplayMetrics dm = getContext().getResources().getDisplayMetrics();
+      width = dm.widthPixels;
+    }
     _marginLeft = Math.max(_config.horizontal_margin, _insets_left);
     _marginRight = Math.max(_config.horizontal_margin, _insets_right);
-    _marginBottom = _config.margin_bottom + _insets_bottom;
-    _keyWidth = (width - _marginLeft - _marginRight) / _keyboard.keysWidth;
-    _tc = new Theme.Computed(_theme, _config, _keyWidth, _keyboard);
+    _marginBottom = _config.floating_enabled ? 0 : (_config.margin_bottom + _insets_bottom);
+
+    float effectiveWidth = width - _marginLeft - _marginRight;
+    if (_config.split_enabled)
+    {
+        // Reserve 30% for the middle gap
+        _keyWidth = (effectiveWidth * 0.7f) / _keyboard.keysWidth;
+    }
+    else
+    {
+        _keyWidth = effectiveWidth / _keyboard.keysWidth;
+    }
+
+    float customRowHeight = -1f;
+    if (_config.floating_enabled && (hMode == MeasureSpec.EXACTLY || hMode == MeasureSpec.AT_MOST) && hSize > 0)
+    {
+      // In floating mode, fill the entire assigned height
+      customRowHeight = (float)hSize / _keyboard.keysHeight;
+    }
+
+    _tc = new Theme.Computed(_theme, _config, _keyWidth, _keyboard, customRowHeight);
+
     // Compute the size of labels based on the width or the height of keys. The
     // margin around keys is taken into account. Keys normal aspect ratio is
     // assumed to be 3/2 for a 10 columns layout. It's generally more, the
@@ -281,9 +333,19 @@ public class Keyboard2View extends View
         ) * _config.characterSize;
     _mainLabelSize = labelBaseSize * _config.labelTextSize;
     _subLabelSize = labelBaseSize * _config.sublabelTextSize;
-    int height =
-      (int)(_tc.row_height * _keyboard.keysHeight
+
+    int height;
+    if (hMode == MeasureSpec.EXACTLY)
+    {
+      height = hSize;
+    }
+    else
+    {
+      height = (int)(_tc.row_height * _keyboard.keysHeight
           + _config.marginTop + _marginBottom);
+      if (hMode == MeasureSpec.AT_MOST)
+        height = Math.min(height, hSize);
+    }
     setMeasuredDimension(width, height);
   }
 
@@ -294,7 +356,7 @@ public class Keyboard2View extends View
   {
     if (!changed)
       return;
-    if (VERSION.SDK_INT >= 29)
+    if (Build.VERSION.SDK_INT >= 29)
     {
       // Disable the back-gesture on the keyboard area
       _cached_exclusion_rect.set(
@@ -310,7 +372,7 @@ public class Keyboard2View extends View
   public WindowInsets onApplyWindowInsets(WindowInsets wi)
   {
     // LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS is set in [Keyboard2#updateSoftInputWindowLayoutParams] for SDK_INT >= 35.
-    if (VERSION.SDK_INT < 35)
+    if (Build.VERSION.SDK_INT < 35)
       return wi;
     int insets_types =
       WindowInsets.Type.systemBars()
@@ -335,22 +397,53 @@ public class Keyboard2View extends View
     Vertical.BOTTOM
   };
 
+  private static class PopupInfo {
+      final KeyboardData.Key key;
+      final KeyValue value;
+      final float x, y, keyW, keyH;
+      final Theme.Computed.Key tc_key;
+
+      PopupInfo(KeyboardData.Key key, KeyValue value, float x, float y, float keyW, float keyH, Theme.Computed.Key tc_key) {
+          this.key = key;
+          this.value = value;
+          this.x = x;
+          this.y = y;
+          this.keyW = keyW;
+          this.keyH = keyH;
+          this.tc_key = tc_key;
+      }
+  }
+
   @Override
   protected void onDraw(Canvas canvas)
   {
     float y = _tc.margin_top;
+    float keysWidth = _keyboard.keysWidth;
+    float effectiveWidth = getWidth() - _marginLeft - _marginRight;
+    float middleGap = _config.split_enabled ? (effectiveWidth * 0.3f) : 0;
+
+    List<PopupInfo> popups = new ArrayList<>();
+
     for (KeyboardData.Row row : _keyboard.rows)
     {
       y += row.shift * _tc.row_height;
-      float x = _marginLeft + _tc.margin_left;
+      float xBase = _marginLeft + _tc.margin_left;
+      float currentX = 0;
       float keyH = row.height * _tc.row_height - _tc.vertical_margin;
+      
       for (KeyboardData.Key k : row.keys)
       {
-        x += k.shift * _keyWidth;
+        currentX += k.shift;
+        float x = xBase + currentX * _keyWidth;
+        if (_config.split_enabled && currentX >= keysWidth / 2)
+        {
+            x += middleGap;
+        }
+        
         float keyW = _keyWidth * k.width - _tc.horizontal_margin;
         boolean isKeyDown = _pointers.isKeyDown(k);
         Theme.Computed.Key tc_key = isKeyDown ? _tc.key_activated : _tc.key;
-        drawKeyFrame(canvas, x, y, keyW, keyH, tc_key);
+        drawKeyFrame(canvas, k, x, y, keyW, keyH, tc_key);
         if (k.keys[0] != null)
           drawLabel(canvas, k.keys[0], keyW / 2f + x, y, keyH, isKeyDown, tc_key);
         for (int i = 1; i < 9; i++)
@@ -359,10 +452,55 @@ public class Keyboard2View extends View
             drawSubLabel(canvas, k.keys[i], x, y, keyW, keyH, i, isKeyDown, tc_key);
         }
         drawIndication(canvas, k, x, y, keyW, keyH, _tc);
-        x += _keyWidth * k.width;
+
+        if (isKeyDown)
+        {
+            KeyValue activeValue = _pointers.getKeyValueFor(k);
+            if (activeValue != null && !activeValue.hasFlagsAny(KeyValue.FLAG_SPECIAL)) {
+                popups.add(new PopupInfo(k, activeValue, x, y, keyW, keyH, tc_key));
+            }
+        }
+
+        currentX += k.width;
       }
       y += row.height * _tc.row_height;
     }
+
+    // Draw popups last to ensure they are on top
+    for (PopupInfo p : popups) {
+        drawPopup(canvas, p);
+    }
+  }
+
+  private void drawPopup(Canvas canvas, PopupInfo p)
+  {
+      float popupW = p.keyW * 1.2f;
+      float popupH = p.keyH * 1.5f;
+      float px = p.x + (p.keyW - popupW) / 2f;
+      float py = p.y - popupH - 8; // Offset above the key
+
+      // Ensure it stays on screen
+      if (px < 0) px = 0;
+      if (px + popupW > getWidth()) px = getWidth() - popupW;
+
+      float r = p.tc_key.border_radius * 1.5f;
+      _tmpRect.set(px, py, px + popupW, py + popupH);
+      
+      // Draw shadow/border
+      Paint shadowPaint = new Paint();
+      shadowPaint.setColor(0x44000000);
+      canvas.drawRoundRect(new RectF(px+2, py+2, px+popupW+2, py+popupH+2), r, r, shadowPaint);
+
+      // Draw background
+      Paint bgPaint = new Paint(p.tc_key.bg_paint);
+      bgPaint.setAlpha(255); // Opaque popup
+      canvas.drawRoundRect(_tmpRect, r, r, bgPaint);
+
+      // Draw label
+      float textSize = p.keyH * 0.8f;
+      Paint labelPaint = p.tc_key.label_paint(p.value.hasFlagsAny(KeyValue.FLAG_KEY_FONT), _theme.labelColor, textSize);
+      labelPaint.setAlpha(255);
+      canvas.drawText(p.value.getString(), px + popupW / 2f, py + (popupH - labelPaint.ascent() - labelPaint.descent()) / 2f, labelPaint);
   }
 
   @Override
@@ -372,14 +510,81 @@ public class Keyboard2View extends View
   }
 
   /** Draw borders and background of the key. */
-  void drawKeyFrame(Canvas canvas, float x, float y, float keyW, float keyH,
+  void drawKeyFrame(Canvas canvas, KeyboardData.Key k, float x, float y, float keyW, float keyH,
       Theme.Computed.Key tc)
   {
     float r = tc.border_radius;
     float w = tc.border_width;
     float padding = w / 2.f;
     _tmpRect.set(x + padding, y + padding, x + keyW - padding, y + keyH - padding);
-    canvas.drawRoundRect(_tmpRect, r, r, tc.bg_paint);
+
+    // Accent coloring for Enter/Action key or locked Shift
+    boolean isAccent = false;
+    boolean isFunction = false;
+    if (k.keys[0] != null)
+    {
+      KeyValue kv = k.keys[0];
+      if (kv.getKind() == KeyValue.Kind.Event && kv.getEvent() == KeyValue.Event.ACTION)
+        isAccent = true;
+      else if (kv.getKind() == KeyValue.Kind.Keyevent && kv.getKeyevent() == KeyEvent.KEYCODE_ENTER)
+        isAccent = true;
+      else if (kv.getKind() == KeyValue.Kind.Modifier && kv.getModifier() == KeyValue.Modifier.SHIFT)
+      {
+        int flags = _pointers.getKeyFlags(kv);
+        if (flags != -1 && (flags & Pointers.FLAG_P_LOCKED) != 0)
+          isAccent = true;
+        else
+          isFunction = true;
+      }
+      else if (kv.getKind() == KeyValue.Kind.Event || kv.getKind() == KeyValue.Kind.Keyevent)
+      {
+        // Most events and keyevents like Backspace are function keys
+        isFunction = true;
+      }
+    }
+
+    if (isAccent && tc == _tc.key)
+    {
+      Paint p = new Paint(tc.bg_paint);
+      p.setColor(_theme.colorAccentKey);
+      if (_theme.isElevated) {
+          float shadow_padding = 1.5f;
+          _tmpRect.offset(0, shadow_padding);
+          Paint shadowPaint = new Paint();
+          shadowPaint.setColor(0x44000000);
+          canvas.drawRoundRect(_tmpRect, r, r, shadowPaint);
+          _tmpRect.offset(0, -shadow_padding);
+      }
+      canvas.drawRoundRect(_tmpRect, r, r, p);
+    }
+    else if (isFunction && tc == _tc.key && _theme.colorKey != _theme.colorKeyboard)
+    {
+       // ...
+       Paint p = new Paint(tc.bg_paint);
+       p.setColor(_theme.colorKeyboard);
+       if (_theme.isElevated) {
+           float shadow_padding = 1.5f;
+           _tmpRect.offset(0, shadow_padding);
+           Paint shadowPaint = new Paint();
+           shadowPaint.setColor(0x44000000);
+           canvas.drawRoundRect(_tmpRect, r, r, shadowPaint);
+           _tmpRect.offset(0, -shadow_padding);
+       }
+       canvas.drawRoundRect(_tmpRect, r, r, p);
+    }
+    else
+    {
+      if (_theme.isElevated && tc == _tc.key) {
+          float shadow_padding = 1.5f;
+          _tmpRect.offset(0, shadow_padding);
+          Paint shadowPaint = new Paint();
+          shadowPaint.setColor(0x44000000);
+          canvas.drawRoundRect(_tmpRect, r, r, shadowPaint);
+          _tmpRect.offset(0, -shadow_padding);
+      }
+      canvas.drawRoundRect(_tmpRect, r, r, tc.bg_paint);
+    }
+
     if (w > 0.f)
     {
       float overlap = r - r * 0.85f + w; // sin(45°)
@@ -476,8 +681,15 @@ public class Keyboard2View extends View
 
   private float scaleTextSize(KeyValue k, boolean main_label)
   {
+    float script_scale = 1.0f;
+    if (_keyboard != null && "malayalam".equals(_keyboard.script))
+    {
+      KeyValue.Kind kind = k.getKind();
+      if (kind == KeyValue.Kind.String || kind == KeyValue.Kind.Char)
+        script_scale = 0.765f; // 0.85 * 0.9
+    }
     float smaller_font = k.hasFlagsAny(KeyValue.FLAG_SMALLER_FONT) ? 0.75f : 1.f;
     float label_size = main_label ? _mainLabelSize : _subLabelSize;
-    return label_size * smaller_font;
+    return label_size * smaller_font * script_scale;
   }
 }

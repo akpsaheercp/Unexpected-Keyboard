@@ -139,7 +139,7 @@ public class LayoutsPreference extends ListGroupPreference<LayoutsPreference.Lay
   @Override
   boolean should_allow_remove_item(Layout value)
   {
-    return (_values.size() > 1 && !(value instanceof CustomLayout));
+    return !(value instanceof SystemLayout);
   }
 
   @Override
@@ -212,19 +212,44 @@ public class LayoutsPreference extends ListGroupPreference<LayoutsPreference.Lay
       select_dialog(callback);
   }
 
+  /** Called when a layout name is long-pressed. */
+  @Override
+  void long_select(final SelectionCallback callback, Layout value)
+  {
+    if (value instanceof NamedLayout)
+    {
+      String xml = read_layout_xml(((NamedLayout)value).name);
+      select_custom(callback, xml);
+    }
+    else if (value instanceof SystemLayout)
+    {
+      select_custom(callback, read_initial_custom_layout());
+    }
+    else // CustomLayout
+    {
+      super.long_select(callback, value);
+    }
+  }
+
   /** The initial text for the custom layout entry box. The qwerty_us layout is
       a good default and contains a bit of documentation. */
   String read_initial_custom_layout()
   {
+    return read_layout_xml("latn_qwerty_us");
+  }
+
+  /** Read the XML content of a layout from raw resources. */
+  String read_layout_xml(String name)
+  {
     try
     {
       Resources res = getContext().getResources();
-      return Utils.read_all_utf8(res.openRawResource(R.raw.latn_qwerty_us));
+      int id = res.getIdentifier(name, "raw", getContext().getPackageName());
+      if (id > 0)
+        return Utils.read_all_utf8(res.openRawResource(id));
     }
-    catch (Exception _e)
-    {
-      return "";
-    }
+    catch (Exception _e) {}
+    return "";
   }
 
   class LayoutsAddButton extends AddButton

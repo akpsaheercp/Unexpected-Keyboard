@@ -37,6 +37,8 @@
     <item>@string/pref_theme_e_white</item>
     <item>@string/pref_theme_e_epaper</item>
     <item>@string/pref_theme_e_desert</item>
+    <item>Gboard Light</item>
+    <item>Gboard Dark</item>
     <item>@string/pref_theme_e_jungle</item>
     <item>@string/pref_theme_e_monet</item>
     <item>@string/pref_theme_e_monetlight</item>
@@ -56,6 +58,8 @@
     <item>white</item>
     <item>epaper</item>
     <item>desert</item>
+    <item>gboardlight</item>
+    <item>gboarddark</item>
     <item>jungle</item>
     <item>monet</item>
     <item>monetlight</item>

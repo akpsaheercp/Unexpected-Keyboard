@@ -1,8 +1,7 @@
-import com.android.build.gradle.internal.api.BaseVariantOutputImpl
 import java.io.FileOutputStream
 
 plugins {
-  id("com.android.application") version "8.13.2"
+  id("com.android.application") version "9.2.0"
 }
 
 dependencies {
@@ -13,11 +12,11 @@ dependencies {
 }
 
 android {
-  namespace = "juloo.keyboard2"
-  compileSdkVersion = "android-36"
+namespace = "juloo.keyboard2"
+compileSdkVersion = "android-36"
+ndkVersion = "28.2.13676358"
 
-  defaultConfig {
-    applicationId = "juloo.keyboard2"
+defaultConfig {    applicationId = "juloo.keyboard2"
     minSdk = 21
     targetSdk { version = release(36) }
     versionCode = 53
@@ -175,9 +174,11 @@ val initDebugKeystore by tasks.registering(Exec::class) {
   commandLine("keytool", "-genkeypair", "-dname", "cn=d, ou=e, o=b, c=ug", "-alias", "debug", "-keypass", "debug0", "-keystore", "debug.keystore", "-keyalg", "rsa", "-storepass", "debug0", "-validity", "10000")
 }
 
-// latn_qwerty_us is used as a raw resource by the custom layout option.
-val copyRawQwertyUS by tasks.registering(Copy::class) {
-  from("srcs/layouts/latn_qwerty_us.xml")
+// Layout definitions are copied to raw resources to allow users to customize
+// built-in layouts.
+val copyRawLayouts by tasks.registering(Copy::class) {
+  from("srcs/layouts")
+  include("*.xml")
   into("build/generated-resources/raw")
 }
 
@@ -188,7 +189,7 @@ val copyLayoutDefinitions by tasks.registering(Copy::class) {
 }
 
 tasks.named("preBuild") {
-  dependsOn(initDebugKeystore, copyRawQwertyUS, copyLayoutDefinitions)
+  dependsOn(initDebugKeystore, copyRawLayouts, copyLayoutDefinitions)
   // 'mustRunAfter' defines ordering between tasks (which is required by
   // Gradle) but doesn't create a dependency. These rules update files that are
   // checked in the repository that don't need to be updated during regular

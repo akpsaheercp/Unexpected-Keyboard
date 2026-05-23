@@ -52,7 +52,6 @@ public final class ClipboardPinView extends NonScrollListView
     invalidate();
   }
 
-  /** Remove the entry at index [pos] and persist the change. */
   public void remove_entry(int pos)
   {
     if (pos < 0 || pos >= _entries.size())
@@ -61,6 +60,31 @@ public final class ClipboardPinView extends NonScrollListView
     _adapter.notifyDataSetChanged();
     persist();
     invalidate();
+  }
+
+  public void change_entry(int pos, String text)
+  {
+    if (pos < 0 || pos >= _entries.size())
+        return;
+    _entries.set(pos, text);
+    _adapter.notifyDataSetChanged();
+    persist();
+    invalidate();
+  }
+
+  public void edit_entry(final int pos)
+  {
+    final String clip = _entries.get(pos);
+    CustomLayoutEditDialog.show(getContext(), clip, false, new CustomLayoutEditDialog.Callback() {
+        @Override
+        public void select(String text) {
+            if (text != null && !text.equals(clip)) {
+                change_entry(pos, text);
+            }
+        }
+        @Override
+        public String validate(String text) { return null; }
+    });
   }
 
   /** Send the specified entry to the editor. */
@@ -118,9 +142,14 @@ public final class ClipboardPinView extends NonScrollListView
           {
             @Override
             public void onClick(View v) { paste_entry(pos); }
-          });
-      v.findViewById(R.id.clipboard_pin_remove).setOnClickListener(
-          new View.OnClickListener()
+            });
+            v.findViewById(R.id.clipboard_pin_edit).setOnClickListener(
+              new View.OnClickListener()
+              {
+                @Override
+                public void onClick(View v) { edit_entry(pos); }
+              });
+            v.findViewById(R.id.clipboard_pin_remove).setOnClickListener(          new View.OnClickListener()
           {
             @Override
             public void onClick(View v)

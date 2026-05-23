@@ -58,6 +58,12 @@ public abstract class ListGroupPreference<E> extends PreferenceGroup
       item is being added. */
   abstract void select(SelectionCallback<E> callback, E old_value);
 
+  /** Called when an item is long-pressed. Defaults to [select]. */
+  void long_select(SelectionCallback<E> callback, E value)
+  {
+    select(callback, value);
+  }
+
   /** A separate class is used as the same serializer must be used in the
       static context. See [Serializer] below. */
   abstract Serializer<E> get_serializer();
@@ -199,23 +205,52 @@ public abstract class ListGroupPreference<E> extends PreferenceGroup
       _index = index;
       setPersistent(false);
       setTitle(label_of_value(value, index));
-      if (should_allow_remove_item(value))
-        setWidgetLayoutResource(R.layout.pref_listgroup_item_widget);
+      setWidgetLayoutResource(R.layout.pref_listgroup_item_widget);
     }
 
     @Override
-    protected View onCreateView(ViewGroup parent)
+    protected void onBindView(View v)
     {
-      View v = super.onCreateView(parent);
-      View remove_btn = v.findViewById(R.id.pref_listgroup_remove_btn);
-      if (remove_btn != null)
-        remove_btn.setOnClickListener(new View.OnClickListener() {
+      super.onBindView(v);
+      View edit_xml_btn = v.findViewById(R.id.pref_listgroup_edit_xml_btn);
+      if (edit_xml_btn != null)
+        edit_xml_btn.setOnClickListener(new View.OnClickListener() {
           @Override
           public void onClick(View _v)
           {
-            remove_item(_index);
+            long_select(new SelectionCallback<E>() {
+              public void select(E value)
+              {
+                if (value == null)
+                  remove_item(_index);
+                else
+                  change_item(_index, value);
+              }
+
+              public boolean allow_remove() { return true; }
+            }, _value);
           }
         });
+
+      View remove_btn = v.findViewById(R.id.pref_listgroup_remove_btn);
+      if (remove_btn != null)
+      {
+        if (should_allow_remove_item(_value))
+        {
+          remove_btn.setVisibility(View.VISIBLE);
+          remove_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View _v)
+            {
+              remove_item(_index);
+            }
+          });
+        }
+        else
+        {
+          remove_btn.setVisibility(View.GONE);
+        }
+      }
       v.setOnClickListener(new View.OnClickListener() {
         @Override
         public void onClick(View _v)
@@ -233,7 +268,6 @@ public abstract class ListGroupPreference<E> extends PreferenceGroup
           }, _value);
         }
       });
-      return v;
     }
   }
 

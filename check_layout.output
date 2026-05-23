@@ -1,4 +1,5 @@
 arab_alt: Layout includes some ASCII punctuation but not all, missing: !, ", ', +, -, /, :, ;, <, =, >, ?, [, \, ], _, |, ~
+arab_gboard: Layout includes some ASCII punctuation but not all, missing: !, ", ', +, -, /, :, ;, <, =, >, ?, [, \, ], _, |, ~
 arab_hamvaj_tly: Layout includes some ASCII punctuation but not all, missing: ", %, ', ,, /, ;, <, =, >, ?, [, \, ], _, `, {, |, }
 arab_pc: Layout includes some ASCII punctuation but not all, missing: !, ', +, ;, ?, \, |
 arab_pc_ckb: Layout includes some ASCII punctuation but not all, missing: ", %, ', +, ,, ;, <, =, >, ?, `, |, ~
@@ -29,4 +30,7 @@ latn_neo2: Layout redefines the bottom row but some important keys are missing, 
 latn_qwertz_cz_multifunctional: Layout includes some ASCII punctuation but not all, missing: `
 latn_qwertz_sk: Layout includes some ASCII punctuation but not all, missing: `
 latn_qzerty_it: Layout includes some ASCII punctuation but not all, missing: #, $, \, `, ~
+mlym_malayalam: Duplicate keys: , ?
+mlym_malayalam: Layout includes some ASCII punctuation but not all, missing: :, ;, `, |, }
+mlym_malayalam: Layout contains empty strings, unexpected: 
 urdu_phonetic_ur: Layout includes some ASCII punctuation but not all, missing: <, >, ?, `, |, ~

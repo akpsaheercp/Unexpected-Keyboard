@@ -72,6 +72,15 @@ public class CandidatesView extends LinearLayout
     }
   }
 
+  public boolean has_candidates()
+  {
+    for (int i = 0; i < NUM_CANDIDATES; i++)
+    {
+      if (_items[i] != null) return true;
+    }
+    return false;
+  }
+
   public void clear_candidates()
   {
     for (int i = 0; i < _item_views.length; i++)
@@ -84,11 +93,6 @@ public class CandidatesView extends LinearLayout
   public void refresh_config(Config config)
   {
     clear_candidates();
-    // The status message indicates whether the dictionaries should be
-    // installed.
-    _status_no_dict = inflate_and_show(_status_no_dict,
-        (config.current_dictionary == null),
-        R.layout.candidates_status_no_dict);
     set_sizes(config);
   }
 

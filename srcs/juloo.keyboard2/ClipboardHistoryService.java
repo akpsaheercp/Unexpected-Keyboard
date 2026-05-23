@@ -50,7 +50,7 @@ public final class ClipboardHistoryService
   /** The maximum size limits the amount of user data stored in memory but also
       gives a sense to the user that the history is not persisted and can be
       forgotten as soon as the app stops. */
-  public static final int MAX_HISTORY_SIZE = 6;
+  public static final int MAX_HISTORY_SIZE = 20;
 
   static ClipboardHistoryService _service = null;
   static ClipboardPasteCallback _paste_callback = null;

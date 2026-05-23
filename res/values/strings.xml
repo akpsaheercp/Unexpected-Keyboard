@@ -145,6 +145,9 @@
     <string name="key_descr_delete_word">Delete a word</string>
     <string name="key_descr_forward_delete_word">Delete a word on the right</string>
     <string name="key_descr_gesture">Gesture</string>
+    <string name="key_descr_toggle_floating">Toggle floating mode</string>
+    <string name="pref_floating_enabled">Floating mode</string>
+    <string name="pref_floating_summary">Enable movable and resizable keyboard</string>
     <string name="clipboard_history_heading">Recently copied text</string>
     <string name="clipboard_pin_heading">Pinned</string>
     <string name="clipboard_remove_confirm">Remove this clipboard item?</string>
@@ -163,4 +166,13 @@
     <string name="dictionaries_activity_not_enabled">You must first enable the keyboard to download dictionaries.</string>
     <string name="candidates_status_no_dict">No dictionary installed</string>
     <string name="candidates_status_install">Install</string>
+    <string name="pref_category_backup_restore">Backup and Restore</string>
+    <string name="pref_backup_title">Backup configuration</string>
+    <string name="pref_backup_summary">Save current configuration to a file</string>
+    <string name="pref_restore_title">Restore configuration</string>
+    <string name="pref_restore_summary">Restore configuration from a file</string>
+    <string name="backup_success">Backup successful</string>
+    <string name="backup_failed">Backup failed</string>
+    <string name="restore_success">Configuration restored. Please restart the keyboard.</string>
+    <string name="restore_failed">Restore failed. Invalid file.</string>
 </resources>
